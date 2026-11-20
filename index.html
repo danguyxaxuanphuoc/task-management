@@ -740,7 +740,7 @@ function doPost(e) {
 
   // Chế độ trải nghiệm cục bộ: thông báo trạng thái kết nối GAS
   async function checkGASConnection() {
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxJj4CsLxM9szfpN9xwvApp8wcsyoz6gnJUlxUBzwR1xBCrDFkOSJ_uaaDiH91W6aK7ng/exec";
     try {
       const response = await fetch(GAS_ENDPOINT, { method: "OPTIONS" });
       if (response.ok) {
