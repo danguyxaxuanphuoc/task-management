@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hệ thống Quản lý Nhân sự & Nhắc việc Xuân Phước</title>
+<style>
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 0; background: #f5f7fa; color: #333;
+  }
+  header {
+    background-color: #004d99;
+    color: white;
+    padding: 1rem 2rem;
+    text-align: center;
+  }
+  main {
+    max-width: 960px;
+    margin: 1rem auto;
+    background: white;
+    padding: 1rem 2rem 2rem 2rem;
+    border-radius: 6px;
+    box-shadow: 0 0 10px #ccc;
+  }
+  h1, h2, h3 {
+    color: #004d99;
+  }
+  label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 600;
+  }
+  input[type="text"], input[type="email"], select, textarea {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    margin-top: 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  button {
+    margin-top: 1.5rem;
+    background-color: #007acc;
+    color: white;
+    border: none;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:disabled {
+    background-color: #a0a0a0;
+    cursor: not-allowed;
+  }
+  .error {
+    color: #cc0000;
+    font-size: 0.9rem;
+    margin-top: 0.2rem;
+  }
+  .info {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background-color: #e7f3ff;
+    border-left: 4px solid #007acc;
+    font-size: 0.95rem;
+  }
+  .section {
+    margin-bottom: 2rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+  }
+  th {
+    background-color: #007acc;
+    color: white;
+  }
+  .status {
+    margin-top: 1rem;
+    font-weight: 600;
+  }
+  .status.success {
+    color: green;
+  }
+  .status.error {
+    color: #cc0000;
+  }
+  .flex-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .flex-grow {
+    flex-grow: 1;
+  }
+  .file-input-label {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  .note {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.3rem;
+  }
+  footer {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #777;
+    margin: 2rem 0 1rem 0;
+  }
+  /* Scrollable table container */
+  .table-container {
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hệ thống Quản lý Nhân sự & Nhắc việc Xuân Phước</h1>
+  <p>Giao diện web tĩnh với chức năng trích xuất PDF/Word và lưu công việc vào Excel trên Google Drive</p>
+</header>
+<main>
+  <section class="section" id="personnel-management">
+    <h2>1. Quản lý Nhân sự</h2>
+    <form id="form-personnel" novalidate>
+      <label for="personnel-name">Họ và tên <span style="color:#cc0000">*</span></label>
+      <input type="text" id="personnel-name" name="personnelName" required autocomplete="off" />
+      <div class="error" id="error-personnel-name"></div>
+
+      <label for="personnel-email">Email nhận nhắc việc</label>
+      <input type="email" id="personnel-email" name="personnelEmail" autocomplete="off" />
+      <div class="error" id="error-personnel-email"></div>
+
+      <label for="personnel-zalo">Định danh nhận Zalo</label>
+      <input type="text" id="personnel-zalo" name="personnelZalo" autocomplete="off" />
+      <div class="note">Thông tin định danh Zalo dùng để gửi nhắc việc qua kênh Zalo (nếu tích hợp).</div>
+
+      <button type="submit">Lưu Nhân sự</button>
+    </form>
+    <div id="personnel-list-section" class="section" style="margin-top:2rem;">
+      <h3>Danh sách Nhân sự</h3>
+      <div class="table-container">
+        <table id="personnel-table" aria-label="Danh sách nhân sự">
+          <thead>
+            <tr>
+              <th>Mã nhân sự</th>
+              <th>Họ và tên</th>
+              <th>Email</th>
+              <th>Định danh Zalo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Danh sách nhân sự sẽ được hiển thị ở đây -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="task-creation">
+    <h2>2. Tạo Công việc mới và Giao việc</h2>
+    <form id="form-task" novalidate>
+      <label for="task-summary">Trích yếu công việc <span style="color:#cc0000">*</span></label>
+      <textarea id="task-summary" name="taskSummary" required></textarea>
+      <div class="error" id="error-task-summary"></div>
+
+      <label for="task-assignee">Đồng chí được giao <span style="color:#cc0000">*</span></label>
+      <select id="task-assignee" name="taskAssignee" required>
+        <option value="">-- Chọn nhân sự --</option>
+      </select>
+      <div class="error" id="error-task-assignee"></div>
+
+      <label for="task-doc-number">Số hiệu văn bản</label>
+      <input type="text" id="task-doc-number" name="taskDocNumber" autocomplete="off" />
+
+      <label for="task-attachment">Văn bản đính kèm (PDF/Word)</label>
+      <input type="file" id="task-attachment" name="taskAttachment" accept=".pdf,.doc,.docx" />
+      <div class="note">Hỗ trợ trích xuất trích yếu và số hiệu văn bản từ tài liệu để điền tự động.</div>
+
+      <button type="button" id="btn-extract-text">Trích xuất nội dung từ tài liệu</button>
+      <div id="extracted-text" class="info" style="white-space: pre-wrap; margin-top: 0.5rem; display:none;"></div>
+
+      <button type="submit">Lưu Công việc</button>
+    </form>
+    <div id="task-list-section" class="section" style="margin-top:2rem;">
+      <h3>Danh sách Công việc đã tạo</h3>
+      <div class="table-container">
+        <table id="task-table" aria-label="Danh sách công việc">
+          <thead>
+            <tr>
+              <th>Mã công việc</th>
+              <th>Trích yếu</th>
+              <th>Đồng chí được giao</th>
+              <th>Số hiệu văn bản</th>
+              <th>Thời điểm tạo</th>
+              <th>Văn bản đính kèm</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Danh sách công việc sẽ được hiển thị ở đây -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="statistics">
+    <h2>3. Thống kê Khối lượng Công việc</h2>
+    <form id="form-statistics" novalidate>
+      <label for="stat-period-type">Loại kỳ thống kê</label>
+      <select id="stat-period-type" name="statPeriodType" required>
+        <option value="month">Tháng</option>
+        <option value="quarter">Quý</option>
+        <option value="year">Năm</option>
+      </select>
+
+      <label for="stat-period-value">Chọn kỳ cụ thể</label>
+      <input type="month" id="stat-period-value" name="statPeriodValue" required />
+
+      <label for="stat-personnel">Chọn nhân sự (hoặc để trống xem tất cả)</label>
+      <select id="stat-personnel" name="statPersonnel">
+        <option value="">Tất cả nhân sự</option>
+      </select>
+
+      <button type="submit">Xem Thống kê</button>
+    </form>
+    <div id="statistics-result" class="section" style="margin-top:1rem;">
+      <!-- Kết quả thống kê sẽ hiển thị ở đây -->
+    </div>
+  </section>
+
+  <section class="section" id="reminder-status">
+    <h2>4. Trạng thái Kết quả Nhắc việc</h2>
+    <div id="reminder-log" class="table-container" style="max-height: 300px; overflow-y: auto;">
+      <table id="reminder-table" aria-label="Kết quả nhắc việc">
+        <thead>
+          <tr>
+            <th>Mã công việc</th>
+            <th>Đồng chí nhận</th>
+            <th>Kênh gửi</th>
+            <th>Thời điểm gửi</th>
+            <th>Kết quả</th>
+            <th>Thông tin lỗi (nếu có)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Log nhắc việc sẽ hiển thị ở đây -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" id="connection-status">
+    <h2>5. Trạng thái Kết nối & Hướng dẫn Triển khai</h2>
+    <div class="info" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem;">
+      <strong>Hướng dẫn triển khai:</strong>
+
+      1. Đưa file HTML này lên GitHub Pages để chạy giao diện tĩnh.<br>
+      2. Tạo Google Apps Script (GAS) backend để xử lý lưu công việc vào file Excel (.xlsx) trên Google Drive.<br>
+      3. GAS cần triển khai endpoint RESTful, nhận dữ liệu JSON từ giao diện, xử lý lưu file Excel .xlsx.<br>
+      4. Giao diện gọi GAS qua fetch API, cần cấu hình CORS và redirect phù hợp.<br>
+      5. Không lưu khóa bí mật hay token trong HTML, bảo mật bằng OAuth hoặc xác thực riêng.<br>
+      6. Phân biệt Google Sheets và file Excel (.xlsx): GAS có thể dùng Sheets làm trung gian, sau đó xuất XLSX cập nhật Drive.<br>
+      7. Tích hợp trích xuất văn bản từ PDF/Word dùng thư viện JS (pdf.js, mammoth.js) để hỗ trợ điền tự động.<br>
+      8. Lưu ý giới hạn đọc DOC cũ, PDF quét cần OCR ngoài phạm vi.<br>
+      9. Quyền Drive cần cấp cho GAS để đọc/ghi file Excel.<br>
+      10. Dịch vụ gửi email/Zalo cần cấu hình riêng, GAS chỉ gọi API gửi, không giả lập gửi.<br>
+      11. Giao diện có chế độ trải nghiệm cục bộ, trạng thái kết nối rõ ràng.<br>
+      12. Chống XSS khi hiển thị dữ liệu, không tự động thực thi nội dung tài liệu.<br>
+      <br>
+      <strong>Mã Google Apps Script backend mẫu (copy & cấu hình URL endpoint):</strong><br>
+      <pre>
+// GAS: Code.gs
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    // Kiểm tra dữ liệu đầu vào
+    if (!data.taskList) return ContentService.createTextOutput(JSON.stringify({error: "No taskList"})).setMimeType(ContentService.MimeType.JSON);
+
+    // Mở hoặc tạo file Excel .xlsx trên Drive
+    var folderId = "YOUR_FOLDER_ID"; // Thay bằng ID thư mục Drive
+    var fileName = "DanhSachCongViec.xlsx";
+    var folder = DriveApp.getFolderById(folderId);
+    var files = folder.getFilesByName(fileName);
+    var file;
+    if (files.hasNext()) {
+      file = files.next();
+    } else {
+      // Tạo file Excel mới (rỗng)
+      var blob = Utilities.newBlob("", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+      file = folder.createFile(blob);
+    }
+
+    // Mở file bằng Sheets để chỉnh sửa (lưu ý: file Excel được chuyển sang Sheets)
+    var ss = SpreadsheetApp.openById(file.getId());
+    var sheet = ss.getSheetByName("CongViec");
+    if (!sheet) sheet = ss.insertSheet("CongViec");
+    sheet.clear();
+
+    // Viết header
+    var headers = ["Mã công việc", "Trích yếu", "Mã nhân sự", "Họ tên", "Số hiệu văn bản", "Thời điểm tạo", "Tên tệp đính kèm"];
+    sheet.appendRow(headers);
+
+    // Viết dữ liệu công việc
+    data.taskList.forEach(function(task, i) {
+      sheet.appendRow([
+        task.taskId || "",
+        task.summary || "",
+        task.personnelId || "",
+        task.personnelName || "",
+        task.docNumber || "",
+        task.createdAt || "",
+        task.attachmentName || ""
+      ]);
+    });
+
+    // Xuất file Sheets thành XLSX và ghi đè file gốc
+    var xlsxBlob = ss.getBlob().setName(fileName);
+    file.setContent(xlsxBlob.getBytes());
+
+    return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({error: err.message})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+      </pre>
+      <br>
+      <strong>Lưu ý:</strong> Cần cấp quyền Drive cho GAS, cấu hình OAuth, và đảm bảo CORS cho phép gọi từ GitHub Pages.<br>
+      <br>
+      <strong>Giới hạn và lưu ý bảo mật:</strong><br>
+      - Không lưu dữ liệu nhạy cảm trong thông báo hoặc kênh ngoài.<br>
+      - Không tự động gửi email/Zalo khi chưa kết nối dịch vụ.<br>
+      - Kiểm tra kỹ dữ liệu đầu vào, tránh XSS.<br>
+      - PDF quét cần OCR ngoài phạm vi.<br>
+    </div>
+  </section>
+</main>
+<footer>
+  &copy; 2024 Hệ thống Quản lý Nhân sự & Nhắc việc Xuân Phước - Bản quyền thuộc về người dùng
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+<script>
+(() => {
+  // Mã tự sinh mã nhân sự và công việc
+  let personnelIdCounter = 1;
+  let taskIdCounter = 1;
+
+  // Dữ liệu lưu tạm trong bộ nhớ (thực tế lưu Drive qua GAS)
+  const personnelList = [];
+  const taskList = [];
+  const reminderLog = [];
+
+  // DOM references
+  const formPersonnel = document.getElementById("form-personnel");
+  const personnelTableBody = document.querySelector("#personnel-table tbody");
+  const personnelSelect = document.getElementById("task-assignee");
+  const personnelSelectStat = document.getElementById("stat-personnel");
+
+  const formTask = document.getElementById("form-task");
+  const taskTableBody = document.querySelector("#task-table tbody");
+  const extractedTextDiv = document.getElementById("extracted-text");
+  const btnExtractText = document.getElementById("btn-extract-text");
+  const inputAttachment = document.getElementById("task-attachment");
+
+  const formStatistics = document.getElementById("form-statistics");
+  const statisticsResultDiv = document.getElementById("statistics-result");
+
+  const reminderTableBody = document.querySelector("#reminder-table tbody");
+
+  // Utility: escape HTML to prevent XSS
+  function escapeHtml(text) {
+    if (!text) return "";
+    return text.replace(/[&<>"']/g, function(m) {
+      return ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[m];
+    });
+  }
+
+  // Generate unique personnel ID
+  function generatePersonnelId() {
+    return "NS" + String(personnelIdCounter++).padStart(4, "0");
+  }
+  // Generate unique task ID
+  function generateTaskId() {
+    return "CV" + String(taskIdCounter++).padStart(5, "0");
+  }
+
+  // Render personnel list table and selects
+  function renderPersonnel() {
+    personnelTableBody.innerHTML = "";
+    personnelSelect.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
+    personnelSelectStat.innerHTML = '<option value="">Tất cả nhân sự</option>';
+    personnelList.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${escapeHtml(p.id)}</td><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.email)}</td><td>${escapeHtml(p.zalo)}</td>`;
+      personnelTableBody.appendChild(tr);
+
+      const option1 = document.createElement("option");
+      option1.value = p.id;
+      option1.textContent = p.name;
+      personnelSelect.appendChild(option1);
+
+      const option2 = document.createElement("option");
+      option2.value = p.id;
+      option2.textContent = p.name;
+      personnelSelectStat.appendChild(option2);
+    });
+  }
+
+  // Render task list table
+  function renderTasks() {
+    taskTableBody.innerHTML = "";
+    taskList.forEach(t => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${escapeHtml(t.id)}</td>
+        <td>${escapeHtml(t.summary)}</td>
+        <td>${escapeHtml(t.personnelName)}</td>
+        <td>${escapeHtml(t.docNumber || "")}</td>
+        <td>${escapeHtml(t.createdAt)}</td>
+        <td>${escapeHtml(t.attachmentName || "")}</td>`;
+      taskTableBody.appendChild(tr);
+    });
+  }
+
+  // Render reminder log table
+  function renderReminderLog() {
+    reminderTableBody.innerHTML = "";
+    reminderLog.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${escapeHtml(r.taskId)}</td>
+        <td>${escapeHtml(r.personnelName)}</td>
+        <td>${escapeHtml(r.channel)}</td>
+        <td>${escapeHtml(r.sentAt)}</td>
+        <td>${escapeHtml(r.result)}</td>
+        <td>${escapeHtml(r.errorInfo || "")}</td>`;
+      reminderTableBody.appendChild(tr);
+    });
+  }
+
+  // Validate email format simple
+  function validateEmail(email) {
+    if (!email) return true; // optional
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
+
+  // Validate form personnel
+  function validatePersonnelForm() {
+    let valid = true;
+    const nameInput = formPersonnel.personnelName;
+    const emailInput = formPersonnel.personnelEmail;
+    const errorName = document.getElementById("error-personnel-name");
+    const errorEmail = document.getElementById("error-personnel-email");
+    errorName.textContent = "";
+    errorEmail.textContent = "";
+
+    if (!nameInput.value.trim()) {
+      errorName.textContent = "Họ và tên là bắt buộc.";
+      valid = false;
+    }
+    if (emailInput.value.trim() && !validateEmail(emailInput.value.trim())) {
+      errorEmail.textContent = "Email không hợp lệ.";
+      valid = false;
+    }
+    return valid;
+  }
+
+  // Validate form task
+  function validateTaskForm() {
+    let valid = true;
+    const summaryInput = formTask.taskSummary;
+    const assigneeInput = formTask.taskAssignee;
+    const errorSummary = document.getElementById("error-task-summary");
+    const errorAssignee = document.getElementById("error-task-assignee");
+    errorSummary.textContent = "";
+    errorAssignee.textContent = "";
+
+    if (!summaryInput.value.trim()) {
+      errorSummary.textContent = "Trích yếu công việc là bắt buộc và không được để trống.";
+      valid = false;
+    }
+    if (!assigneeInput.value) {
+      errorAssignee.textContent = "Phải chọn đồng chí được giao.";
+      valid = false;
+    }
+    return valid;
+  }
+
+  // Handle personnel form submit
+  formPersonnel.addEventListener("submit", e => {
+    e.preventDefault();
+    if (!validatePersonnelForm()) return;
+
+    const name = formPersonnel.personnelName.value.trim();
+    const email = formPersonnel.personnelEmail.value.trim();
+    const zalo = formPersonnel.personnelZalo.value.trim();
+
+    // Tạo mã nhân sự mới
+    const newId = generatePersonnelId();
+
+    // Lưu nhân sự mới
+    personnelList.push({
+      id: newId,
+      name,
+      email,
+      zalo
+    });
+
+    renderPersonnel();
+
+    // Reset form
+    formPersonnel.reset();
+    alert("Lưu nhân sự thành công.");
+  });
+
+  // Handle task form submit
+  formTask.addEventListener("submit", e => {
+    e.preventDefault();
+    if (!validateTaskForm()) return;
+
+    const summary = formTask.taskSummary.value.trim();
+    const assigneeId = formTask.taskAssignee.value;
+    const docNumber = formTask.taskDocNumber.value.trim();
+    const attachmentFile = inputAttachment.files[0] || null;
+
+    // Tìm nhân sự theo id
+    const personnel = personnelList.find(p => p.id === assigneeId);
+    if (!personnel) {
+      alert("Đồng chí được giao không hợp lệ.");
+      return;
+    }
+
+    // Tạo mã công việc mới
+    const newTaskId = generateTaskId();
+
+    // Thời điểm tạo hiện tại ISO string
+    const createdAt = new Date().toISOString();
+
+    // Lưu công việc
+    taskList.push({
+      id: newTaskId,
+      summary,
+      personnelId: personnel.id,
+      personnelName: personnel.name,
+      docNumber,
+      createdAt,
+      attachmentName: attachmentFile ? attachmentFile.name : ""
+    });
+
+    renderTasks();
+
+    // Reset form
+    formTask.reset();
+    extractedTextDiv.style.display = "none";
+    alert("Lưu công việc thành công.");
+
+    // Gọi lưu dữ liệu lên Drive qua GAS (demo gọi giả lập)
+    saveTasksToDrive();
+  });
+
+  // Save tasks to Drive via Google Apps Script endpoint
+  async function saveTasksToDrive() {
+    // Thay URL endpoint GAS của bạn vào đây
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+
+    try {
+      const response = await fetch(GAS_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ taskList })
+      });
+      const result = await response.json();
+      if (result.success) {
+        console.log("Lưu công việc lên Drive thành công.");
+      } else {
+        console.error("Lỗi lưu công việc:", result.error || "Không xác định");
+      }
+    } catch (err) {
+      console.error("Lỗi kết nối lưu công việc:", err.message);
+    }
+  }
+
+  // Handle extract text from PDF/Word
+  btnExtractText.addEventListener("click", async () => {
+    const file = inputAttachment.files[0];
+    if (!file) {
+      alert("Vui lòng chọn tệp PDF hoặc Word trước khi trích xuất.");
+      return;
+    }
+    extractedTextDiv.style.display = "block";
+    extractedTextDiv.textContent = "Đang trích xuất nội dung... Vui lòng chờ.";
+
+    try {
+      if (file.type === "application/pdf") {
+        // Xử lý PDF bằng pdf.js
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const strings = content.items.map(item => item.str);
+          fullText += strings.join(" ") + "\n";
+        }
+        extractedTextDiv.textContent = fullText;
+        autoFillFromExtractedText(fullText);
+      } else if (
+        file.name.endsWith(".doc") ||
+        file.name.endsWith(".docx") ||
+        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        // Xử lý Word bằng mammoth.js
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        extractedTextDiv.textContent = result.value;
+        autoFillFromExtractedText(result.value);
+      } else {
+        extractedTextDiv.textContent = "Định dạng tệp không được hỗ trợ để trích xuất.";
+      }
+    } catch (err) {
+      extractedTextDiv.textContent = "Lỗi khi trích xuất nội dung: " + err.message;
+    }
+  });
+
+  // Tự động điền trích yếu và số hiệu văn bản từ nội dung trích xuất (đơn giản)
+  function autoFillFromExtractedText(text) {
+    // Tìm dòng có dạng số hiệu văn bản: ví dụ "Số hiệu: 123/ABC"
+    const docNumberMatch = text.match(/số hiệu\s*[:\-]?\s*([^\n\r]+)/i);
+    if (docNumberMatch) {
+      formTask.taskDocNumber.value = docNumberMatch[1].trim();
+    }
+    // Lấy 1-2 dòng đầu làm trích yếu (giả định)
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length > 0) {
+      formTask.taskSummary.value = lines.slice(0, 2).join(" ").trim();
+    }
+  }
+
+  // Handle statistics form submit
+  formStatistics.addEventListener("submit", e => {
+    e.preventDefault();
+    const periodType = formStatistics.statPeriodType.value;
+    const periodValue = formStatistics.statPeriodValue.value;
+    const personnelId = formStatistics.statPersonnel.value;
+
+    if (!periodValue) {
+      alert("Vui lòng chọn kỳ cụ thể để thống kê.");
+      return;
+    }
+
+    // Xác định khoảng thời gian theo loại kỳ
+    let startDate, endDate;
+    if (periodType === "month") {
+      // periodValue dạng yyyy-MM
+      startDate = new Date(periodValue + "-01T00:00:00");
+      endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+    } else if (periodType === "quarter") {
+      // periodValue dạng yyyy-MM, lấy tháng để xác định quý
+      const [y, m] = periodValue.split("-");
+      const year = parseInt(y, 10);
+      const month = parseInt(m, 10);
+      const quarter = Math.floor((month - 1) / 3) + 1;
+      startDate = new Date(year, (quarter - 1) * 3, 1);
+      endDate = new Date(year, quarter * 3, 1);
+    } else if (periodType === "year") {
+      // periodValue dạng yyyy-MM, lấy năm
+      const year = parseInt(periodValue.split("-")[0], 10);
+      startDate = new Date(year, 0, 1);
+      endDate = new Date(year + 1, 0, 1);
+    } else {
+      alert("Loại kỳ không hợp lệ.");
+      return;
+    }
+
+    // Lọc công việc theo thời gian và nhân sự
+    const filteredTasks = taskList.filter(t => {
+      const created = new Date(t.createdAt);
+      if (created < startDate || created >= endDate) return false;
+      if (personnelId && t.personnelId !== personnelId) return false;
+      return true;
+    });
+
+    // Tính tổng số công việc trong kỳ
+    const totalTasks = filteredTasks.length;
+
+    // Tính số công việc theo nhân sự
+    const countByPersonnel = {};
+    filteredTasks.forEach(t => {
+      countByPersonnel[t.personnelId] = (countByPersonnel[t.personnelId] || 0) + 1;
+    });
+
+    // Nếu chọn 1 nhân sự, hiển thị chi tiết, nếu tất cả, hiển thị bảng tổng hợp
+    let html = "";
+    if (personnelId) {
+      const p = personnelList.find(p => p.id === personnelId);
+      const count = countByPersonnel[personnelId] || 0;
+      html += `<p><strong>Nhân sự:</strong> ${escapeHtml(p ? p.name : "")}</p>`;
+      html += `<p><strong>Tổng số công việc trong kỳ:</strong> ${count}</p>`;
+      html += `<p><strong>Tỷ trọng:</strong> ${totalTasks > 0 ? ((count / totalTasks) * 100).toFixed(2) + "%" : "0%"}</p>`;
+    } else {
+      html += `<p><strong>Tổng số công việc trong kỳ:</strong> ${totalTasks}</p>`;
+      html += `<div class="table-container"><table><thead><tr><th>Mã nhân sự</th><th>Họ tên</th><th>Số công việc</th><th>Tỷ trọng</th></tr></thead><tbody>`;
+      personnelList.forEach(p => {
+        const count = countByPersonnel[p.id] || 0;
+        const ratio = totalTasks > 0 ? ((count / totalTasks) * 100).toFixed(2) + "%" : "0%";
+        html += `<tr><td>${escapeHtml(p.id)}</td><td>${escapeHtml(p.name)}</td><td>${count}</td><td>${ratio}</td></tr>`;
+      });
+      html += `</tbody></table></div>`;
+    }
+    statisticsResultDiv.innerHTML = html;
+  });
+
+  // Khởi tạo giao diện ban đầu
+  renderPersonnel();
+  renderTasks();
+  renderReminderLog();
+
+  // Chế độ trải nghiệm cục bộ: thông báo trạng thái kết nối GAS
+  async function checkGASConnection() {
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+    try {
+      const response = await fetch(GAS_ENDPOINT, { method: "OPTIONS" });
+      if (response.ok) {
+        console.log("Kết nối GAS endpoint khả dụng.");
+      }
+    } catch {
+      console.warn("Không thể kết nối GAS endpoint. Vui lòng kiểm tra URL và cấu hình CORS.");
+    }
+  }
+  checkGASConnection();
+
+})();
+</script>
+</body>
+</html>
